@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="briefing-container">
+    <header class="report-header">
+        <h1>{{ view_model.report_title }}</h1>
+        <div class="meta-info">
+            <p><strong>Company:</strong> {{ view_model.company_display }}</p>
+            <p><strong>{{ view_model.analyst_display }}</strong></p>
+            <p><strong>Date:</strong> {{ view_model.date_display }}</p>
+        </div>
+    </header>
+
+    <section class="executive-summary">
+        <h2>Executive Summary</h2>
+        <p>{{ view_model.summary }}</p>
+    </section>
+
+    <section class="recommendation">
+        <h2>Recommendation</h2>
+        <div class="recommendation-box">
+            <p>{{ view_model.recommendation }}</p>
+        </div>
+    </section>
+
+    <div class="report-grid">
+        <section class="key-points">
+            <h2>Key Points</h2>
+            <ul>
+                {% for point in view_model.key_points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="risks">
+            <h2>Risks</h2>
+            <ul>
+                {% for risk in view_model.risks %}
+                <li>{{ risk }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
+    {% if view_model.metrics %}
+    <section class="metrics">
+        <h2>Key Metrics</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for metric in view_model.metrics %}
+                <tr>
+                    <td>{{ metric.label }}</td>
+                    <td>{{ metric.value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+</div>
+
+<style>
+    .briefing-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+    }
+    .report-header {
+        border-bottom: 3px solid #1a365d;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+    }
+    .report-header h1 {
+        margin: 0;
+        color: #1a365d;
+        font-size: 2.2em;
+    }
+    .meta-info {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 0.95em;
+        color: #4a5568;
+    }
+    h2 {
+        color: #2c5282;
+        border-left: 6px solid #2c5282;
+        padding-left: 12px;
+        margin-top: 35px;
+        font-size: 1.5em;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .recommendation-box {
+        background-color: #ebf8ff;
+        border: 2px solid #bee3f8;
+        padding: 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        color: #2a4365;
+    }
+    .report-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+    .key-points ul, .risks ul {
+        padding-left: 20px;
+    }
+    .key-points li, .risks li {
+        margin-bottom: 8px;
+    }
+    .metrics table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .metrics th, .metrics td {
+        border: 1px solid #e2e8f0;
+        padding: 14px;
+        text-align: left;
+    }
+    .metrics th {
+        background-color: #f7fafc;
+        color: #2d3748;
+        font-weight: 700;
+    }
+    .metrics tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+</style>
+{% endblock %}
+
+{% block footer %}
+    {{ view_model.footer_text }}
+{% endblock %}

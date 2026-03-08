@@ -1,3 +1,3 @@
-from app.models.sample_item import SampleItem
+from app.models.briefing import Briefing
 
-__all__ = ["SampleItem"]
+__all__ = ["Briefing"]

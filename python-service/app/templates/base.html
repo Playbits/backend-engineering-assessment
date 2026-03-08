@@ -3,28 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ title }}</title>
+    <title>{{ title|default("InsightOps Report") }}</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        margin: 2rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        background-color: #f4f7f6;
         color: #1f2937;
       }
       main {
-        max-width: 800px;
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        overflow: hidden;
       }
       footer {
-        margin-top: 2rem;
+        max-width: 900px;
+        margin: 2rem auto 0;
+        text-align: center;
         font-size: 0.875rem;
         color: #6b7280;
+        padding-bottom: 2rem;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>{{ title }}</h1>
-      <div>{{ body }}</div>
+      {% block content %}
+      {% endblock %}
     </main>
-    <footer>Generated at: {{ generated_at }}</footer>
+    <footer>
+      {% block footer %}
+      Generated at: {{ generated_at }}
+      {% endblock %}
+    </footer>
   </body>
 </html>
