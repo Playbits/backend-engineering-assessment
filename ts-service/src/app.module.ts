@@ -7,7 +7,6 @@ import { defaultDatabaseUrl, getTypeOrmOptions } from './config/typeorm.options'
 import { HealthModule } from './health/health.module';
 import { LlmModule } from './llm/llm.module';
 import { QueueModule } from './queue/queue.module';
-import { SampleModule } from './sample/sample.module';
 import { CandidatesModule } from './candidates/candidates.module';
 
 @Module({
@@ -22,7 +21,6 @@ import { CandidatesModule } from './candidates/candidates.module';
     HealthModule,
     QueueModule,
     LlmModule,
-    SampleModule,
     CandidatesModule,
   ],
 })

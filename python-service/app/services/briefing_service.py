@@ -7,12 +7,8 @@ def create_briefing(db: Session, payload: BriefingCreate) -> Briefing:
     """
     Creates a new briefing and its associated points and metrics in the database.
     
-    Args:
-        db: Database session.
-        payload: Validated BriefingCreate schema.
-        
-    Returns:
-        The created Briefing ORM model.
+    This function handles the normalization of data by storing key points and risks
+    in a dedicated 'briefing_points' table with a discriminator type.
     """
     # 1. Create main briefing record
     db_briefing = Briefing(
@@ -49,13 +45,19 @@ def create_briefing(db: Session, payload: BriefingCreate) -> Briefing:
     return db_briefing
 
 def get_briefing(db: Session, briefing_id: int) -> Briefing | None:
-    """Retrieves a briefing by its ID, including related points and metrics."""
+    """
+    Retrieves a briefing by its ID, including related points and metrics.
+    Returns None if the briefing is not found.
+    """
     return db.query(Briefing).filter(Briefing.id == briefing_id).first()
 
 def transform_to_view_model(briefing: Briefing) -> BriefingReportViewModel:
     """
     Transforms a Briefing ORM model into a display-ready View Model.
-    This encapsulates all formatting logic, ensuring separation of concerns.
+    
+    This encapsulates all presentational formatting logic, such as sorting points,
+    title-casing metric labels, and generating human-readable titles/timestamps.
+    Ensures the template remains clean and focused solely on structure.
     """
     from datetime import datetime, timezone
 

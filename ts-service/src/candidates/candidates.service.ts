@@ -16,6 +16,10 @@ export class CandidatesService {
     private readonly queueService: QueueService,
   ) {}
 
+  /**
+   * Stores a new document associated with a candidate.
+   * Ensures the document belongs to the specified workspace for multi-tenant isolation.
+   */
   async uploadDocument(workspaceId: string, candidateId: string, dto: UploadCandidateDocumentDto): Promise<CandidateDocument> {
     const document = this.documentRepo.create({
       candidateId,
@@ -25,6 +29,9 @@ export class CandidatesService {
     return this.documentRepo.save(document);
   }
 
+  /**
+   * Creates a pending summary record and triggers the asynchronous summarization job.
+   */
   async generateSummary(workspaceId: string, candidateId: string): Promise<CandidateSummary> {
     // 1. Create a pending summary record
     const summary = this.summaryRepo.create({
@@ -44,6 +51,9 @@ export class CandidatesService {
     return savedSummary;
   }
 
+  /**
+   * Lists all summaries generated for a specific candidate within a workspace.
+   */
   async listSummaries(workspaceId: string, candidateId: string): Promise<CandidateSummary[]> {
     return this.summaryRepo.find({
       where: { candidateId, workspaceId },
@@ -51,6 +61,10 @@ export class CandidatesService {
     });
   }
 
+  /**
+   * Fetches a single candidate summary by its ID.
+   * Enforces cross-tenant security by checking both workspaceId and candidateId.
+   */
   async getSummary(workspaceId: string, candidateId: string, summaryId: string): Promise<CandidateSummary> {
     const summary = await this.summaryRepo.findOne({
       where: { id: summaryId, candidateId, workspaceId },

@@ -29,6 +29,10 @@ class ValidatedSummaryResult {
   recommendedDecision!: 'advance' | 'hold' | 'reject';
 }
 
+/**
+ * Provides candidate summarization using the Google Gemini AI Model.
+ * Implements structured output requesting and validation.
+ */
 @Injectable()
 export class GeminiSummarizationProvider implements SummarizationProvider {
   private readonly logger = new Logger(GeminiSummarizationProvider.name);
@@ -39,6 +43,12 @@ export class GeminiSummarizationProvider implements SummarizationProvider {
     this.apiKey = this.configService.get<string>('GEMINI_API_KEY') || '';
   }
 
+  /**
+   * Generates a structured summary for a candidate based on provided documents.
+   * 
+   * @param input Candidate ID and list of raw document texts.
+   * @throws Error if Gemini API key is missing, API call fails, or result is malformed.
+   */
   async generateCandidateSummary(
     input: CandidateSummaryInput,
   ): Promise<CandidateSummaryResult> {

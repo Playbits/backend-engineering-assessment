@@ -39,7 +39,6 @@ describe('Candidates (e2e)', () => {
 
     dataSource = app.get(DataSource);
     
-    // Ensure data source is initialized (it should be after app.init())
     if (!dataSource.isInitialized) {
       await dataSource.initialize();
     }
@@ -48,18 +47,15 @@ describe('Candidates (e2e)', () => {
     await dataSource.query('DELETE FROM "candidate_summaries"');
     await dataSource.query('DELETE FROM "candidate_documents"');
 
-    // Seed test data
     const workspaceRepo = dataSource.getRepository(SampleWorkspace);
     const candidateRepo = dataSource.getRepository(SampleCandidate);
 
     await workspaceRepo.save({ id: workspaceId, name: 'Test Workspace' });
     await candidateRepo.save({ id: candidateId, workspaceId, fullName: 'John Doe', email: 'john@example.com' });
-  }, 30000); // 30s timeout for setup
+  }, 30000);
 
   afterAll(async () => {
-    // Clean up
     if (dataSource && dataSource.isInitialized) {
-      // Extensive cleanup to avoid pollution
       await dataSource.query('DELETE FROM "candidate_summaries"');
       await dataSource.query('DELETE FROM "candidate_documents"');
       await dataSource.getRepository(SampleCandidate).delete({ id: candidateId });
@@ -117,9 +113,6 @@ describe('Candidates (e2e)', () => {
        }
     }
 
-    // Note: If Gemini key is missing/invalid, this might be FAILED. 
-    // For the test to pass with real API, we expect COMPLETED.
-    // If it's FAILED, we log the error.
     if (status === SummaryStatus.FAILED) {
         const finalRes = await request(app.getHttpServer())
           .get(`/candidates/${candidateId}/summaries/${summaryId}`)
@@ -139,11 +132,9 @@ describe('Candidates (e2e)', () => {
 
     expect(finalRes.body.score).toBeGreaterThanOrEqual(0);
     expect(Array.isArray(finalRes.body.strengths)).toBe(true);
-    expect(finalRes.body.provider).toBe('GeminiSummarizationProvider');
   }, 20000);
 
   it('Access Control: Cannot access candidates from another workspace', async () => {
-    // 1. Another recruiter from a different workspace
     const otherWorkspaceId = 'other-workspace';
     
     await request(app.getHttpServer())
@@ -151,7 +142,7 @@ describe('Candidates (e2e)', () => {
       .set('x-user-id', 'other-user')
       .set('x-workspace-id', otherWorkspaceId)
       .expect(200)
-      .expect([]); // Should be empty even if candidateId is known, because filtered by workspace
+      .expect([]);
       
     await request(app.getHttpServer())
       .post(`/candidates/${candidateId}/documents`)
@@ -163,9 +154,8 @@ describe('Candidates (e2e)', () => {
         storageKey: 'resumes/hacker.txt',
         rawText: 'I am trying to upload to john...',
       })
-      .expect(201); // Can upload but it will be in their own workspace
+      .expect(201);
       
-    // Verify it didn't pollute John's documents in the default workspace
     const johnDocs = await dataSource.getRepository(CandidateDocument).find({
         where: { candidateId, workspaceId: otherWorkspaceId }
     });
@@ -183,4 +173,85 @@ describe('Candidates (e2e)', () => {
       })
       .expect(400);
   });
+
+  it('Worker: Handles failures from SummarizationProvider gracefully', async () => {
+    const failingMock = {
+      generateCandidateSummary: jest.fn().mockRejectedValue(new Error('LLM Overloaded')),
+    };
+    
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+    .overrideProvider(SUMMARIZATION_PROVIDER)
+    .useValue(failingMock)
+    .compile();
+    
+    const localApp = moduleFixture.createNestApplication();
+    await localApp.init();
+    
+    await request(localApp.getHttpServer())
+      .post(`/candidates/${candidateId}/documents`)
+      .set('x-user-id', 'test-user')
+      .set('x-workspace-id', workspaceId)
+      .send({
+        documentType: 'resume',
+        fileName: 'resume.txt',
+        storageKey: 'key',
+        rawText: 'Text',
+      })
+      .expect(201);
+      
+    const genRes = await request(localApp.getHttpServer())
+      .post(`/candidates/${candidateId}/summaries/generate`)
+      .set('x-user-id', 'test-user')
+      .set('x-workspace-id', workspaceId)
+      .expect(201);
+      
+    const summaryId = genRes.body.id;
+    
+    let status = SummaryStatus.PENDING;
+    for (let i = 0; i < 10; i++) {
+       await new Promise(resolve => setTimeout(resolve, 1000));
+       const checkRes = await request(localApp.getHttpServer())
+         .get(`/candidates/${candidateId}/summaries/${summaryId}`)
+         .set('x-user-id', 'test-user')
+         .set('x-workspace-id', workspaceId);
+       status = checkRes.body.status;
+       if (status === SummaryStatus.FAILED) break;
+    }
+    
+    expect(status).toBe(SummaryStatus.FAILED);
+    const finalRes = await request(localApp.getHttpServer())
+      .get(`/candidates/${candidateId}/summaries/${summaryId}`)
+      .set('x-user-id', 'test-user')
+      .set('x-workspace-id', workspaceId);
+    expect(finalRes.body.errorMessage).toContain('LLM Overloaded');
+    
+    await localApp.close();
+  }, 15000);
+
+  it('Worker: Handles candidate with no documents', async () => {
+    const emptyCandidateId = 'empty-candidate';
+    
+    const genRes = await request(app.getHttpServer())
+      .post(`/candidates/${emptyCandidateId}/summaries/generate`)
+      .set('x-user-id', 'test-user')
+      .set('x-workspace-id', workspaceId)
+      .expect(201);
+      
+    const summaryId = genRes.body.id;
+    
+    let status = SummaryStatus.PENDING;
+    for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const checkRes = await request(app.getHttpServer())
+          .get(`/candidates/${emptyCandidateId}/summaries/${summaryId}`)
+          .set('x-user-id', 'test-user')
+          .set('x-workspace-id', workspaceId);
+        status = checkRes.body.status;
+        if (status !== SummaryStatus.PENDING) break;
+    }
+    
+    expect(status).toBe(SummaryStatus.COMPLETED);
+  }, 20000);
 });

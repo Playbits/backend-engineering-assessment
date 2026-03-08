@@ -181,3 +181,14 @@ def test_sorting_and_formatting(client: TestClient) -> None:
     assert "Gamma" in html
     assert "Delta" in html
     assert "Zeta" in html
+
+
+def test_briefing_not_found(client: TestClient) -> None:
+    """Verifies 404 behavior for invalid briefing IDs."""
+    # GET
+    response = client.get("/briefings/9999")
+    assert response.status_code == 404
+    
+    # GENERATE
+    response = client.post("/briefings/9999/generate")
+    assert response.status_code == 404
