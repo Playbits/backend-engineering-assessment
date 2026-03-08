@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="briefing-container">
+    <header class="report-header">
+        <h1>Briefing Report: {{ briefing.company_name }} ({{ briefing.ticker }})</h1>
+        <div class="meta-info">
+            <p><strong>Sector:</strong> {{ briefing.sector }}</p>
+            <p><strong>Analyst:</strong> {{ briefing.analyst_name }}</p>
+            <p><strong>Date:</strong> {{ briefing.created_at.strftime('%B %d, %Y') }}</p>
+        </div>
+    </header>
+
+    <section class="executive-summary">
+        <h2>Executive Summary</h2>
+        <p>{{ briefing.summary }}</p>
+    </section>
+
+    <section class="recommendation">
+        <h2>Recommendation</h2>
+        <div class="recommendation-box">
+            <p>{{ briefing.recommendation }}</p>
+        </div>
+    </section>
+
+    <div class="report-grid">
+        <section class="key-points">
+            <h2>Key Points</h2>
+            <ul>
+                {% for point in briefing.key_points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="risks">
+            <h2>Risks</h2>
+            <ul>
+                {% for risk in briefing.risks %}
+                <li>{{ risk }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
+    {% if briefing.metrics %}
+    <section class="metrics">
+        <h2>Key Metrics</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for metric in briefing.metrics %}
+                <tr>
+                    <td>{{ metric.name }}</td>
+                    <td>{{ metric.value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+</div>
+
+<style>
+    .briefing-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .report-header {
+        border-bottom: 2px solid #2c3e50;
+        margin-bottom: 30px;
+        padding-bottom: 10px;
+    }
+    .report-header h1 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .meta-info {
+        display: flex;
+        gap: 20px;
+        font-size: 0.9em;
+        color: #666;
+    }
+    h2 {
+        color: #2980b9;
+        border-left: 5px solid #2980b9;
+        padding-left: 10px;
+        margin-top: 30px;
+    }
+    .recommendation-box {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .report-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    .metrics table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .metrics th, .metrics td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+    .metrics th {
+        background-color: #f2f2f2;
+    }
+</style>
+{% endblock %}

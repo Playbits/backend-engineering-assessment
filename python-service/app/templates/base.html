@@ -22,8 +22,10 @@
   </head>
   <body>
     <main>
+      {% block content %}
       <h1>{{ title }}</h1>
       <div>{{ body }}</div>
+      {% endblock %}
     </main>
     <footer>Generated at: {{ generated_at }}</footer>
   </body>
