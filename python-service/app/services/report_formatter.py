@@ -16,10 +16,12 @@ class ReportFormatter:
             autoescape=select_autoescape(enabled_extensions=("html", "xml"), default_for_string=True),
         )
 
-    def render_briefing(self, briefing: Any) -> str:
+    def render_briefing(self, view_model: Any) -> str:
+        """
+        Renders a briefing report using the provided View Model.
+        
+        Args:
+            view_model: A BriefingReportViewModel instance containing pre-formatted data.
+        """
         template = self._env.get_template("briefing_report.html")
-        return template.render(briefing=briefing, generated_at=self.generated_timestamp())
-
-    @staticmethod
-    def generated_timestamp() -> str:
-        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        return template.render(view_model=view_model)
