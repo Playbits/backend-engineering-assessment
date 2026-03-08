@@ -75,3 +75,25 @@ def test_create_and_get_briefing_report(client: TestClient) -> None:
     assert "Briefing Report: Acme Holdings" in report_response.text
     assert "ACME" in report_response.text
     assert "Revenue Growth" in report_response.text
+
+
+def test_create_briefing_without_metrics(client: TestClient) -> None:
+    payload = {
+        "companyName": "Acme Holdings",
+        "ticker": "ACME",
+        "sector": "Industrial Technology",
+        "analystName": "Jane Doe",
+        "summary": "Acme is doing well.",
+        "recommendation": "Buy",
+        "keyPoints": ["Growth is high"],
+        "risks": ["Competition"],
+        "metrics": None
+    }
+
+    create_response = client.post("/briefings", json=payload)
+    assert create_response.status_code == 201
+    briefing_id = create_response.json()["id"]
+
+    report_response = client.get(f"/briefings/{briefing_id}/report")
+    assert report_response.status_code == 200
+    assert "Key Metrics" not in report_response.text
