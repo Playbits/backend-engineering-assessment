@@ -77,7 +77,7 @@ export class CandidatesService {
     const savedSummary = await this.summaryRepo.save(summary);
 
     // 2. Enqueue the background job
-    this.queueService.enqueue("summarize-candidate", {
+    await this.queueService.enqueue("summarize-candidate", {
       summaryId: savedSummary.id,
       candidateId,
       workspaceId,

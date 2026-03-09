@@ -19,13 +19,19 @@ import { CurrentUser } from "../auth/auth-user.decorator";
 import { AuthUser } from "../auth/auth.types";
 import * as mammoth from "mammoth";
 import { randomUUID } from "crypto";
+import * as fs from "fs/promises";
+import * as path from "path";
+import { ConfigService } from "@nestjs/config";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pdf = require("pdf-parse");
 
 @Controller("candidates")
 @UseGuards(FakeAuthGuard)
 export class CandidatesController {
-  constructor(private readonly candidatesService: CandidatesService) {}
+  constructor(
+    private readonly candidatesService: CandidatesService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post(":candidateId/documents")
   @UseInterceptors(FileInterceptor("file"))
@@ -84,10 +90,28 @@ export class CandidatesController {
       dto.documentType = file.mimetype === "application/pdf" ? "pdf" : "word";
     }
 
-    // Generate storageKey if not provided
-    if (!dto.storageKey) {
-      dto.storageKey = `candidates/${candidateId}/${randomUUID()}-${dto.fileName}`;
-    }
+    // Save file locally
+    const storageDir =
+      this.configService.get<string>("STORAGE_DIR") || "storage/documents";
+    const absoluteStorageDir = path.isAbsolute(storageDir)
+      ? storageDir
+      : path.join(process.cwd(), storageDir);
+
+    // Ensure directory exists
+    await fs.mkdir(absoluteStorageDir, { recursive: true });
+
+    const fileId = randomUUID();
+    const relativePath = path.join(candidateId, `${fileId}-${dto.fileName}`);
+    const absolutePath = path.join(absoluteStorageDir, relativePath);
+
+    // Ensure candidate sub-directory exists
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+
+    // Write file
+    await fs.writeFile(absolutePath, file.buffer);
+
+    // Set storageKey to the relative path within storageDir
+    dto.storageKey = relativePath;
 
     return this.candidatesService.uploadDocument(
       user.workspaceId,

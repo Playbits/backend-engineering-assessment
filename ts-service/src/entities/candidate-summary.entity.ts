@@ -4,6 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Index,
 } from "typeorm";
 
 export enum SummaryStatus {
@@ -14,6 +15,7 @@ export enum SummaryStatus {
 }
 
 @Entity({ name: "candidate_summaries" })
+@Index(["candidateId", "workspaceId"])
 export class CandidateSummary {
   @PrimaryGeneratedColumn("uuid")
   id!: string;

@@ -21,6 +21,6 @@ import { SummarizationWorker } from "./summarization.worker";
   ],
   controllers: [CandidatesController],
   providers: [CandidatesService, SummarizationWorker],
-  exports: [CandidatesService],
+  exports: [CandidatesService, SummarizationWorker],
 })
 export class CandidatesModule {}

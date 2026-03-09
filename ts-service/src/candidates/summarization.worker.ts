@@ -1,10 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
-  Logger,
-} from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CandidateDocument } from "../entities/candidate-document.entity";
@@ -16,81 +10,46 @@ import {
   SUMMARIZATION_PROVIDER,
   SummarizationProvider,
 } from "../llm/summarization-provider.interface";
-import { QueueService } from "../queue/queue.service";
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Job } from "bullmq";
 
+@Processor("summarization")
 @Injectable()
-export class SummarizationWorker implements OnModuleInit, OnModuleDestroy {
+export class SummarizationWorker extends WorkerHost {
   private readonly logger = new Logger(SummarizationWorker.name);
-  private pollingInterval?: NodeJS.Timeout;
 
   constructor(
-    private readonly queueService: QueueService,
     @InjectRepository(CandidateDocument)
     private readonly documentRepo: Repository<CandidateDocument>,
     @InjectRepository(CandidateSummary)
     private readonly summaryRepo: Repository<CandidateSummary>,
     @Inject(SUMMARIZATION_PROVIDER)
     private readonly summarizationProvider: SummarizationProvider,
-  ) {}
-
-  onModuleInit() {
-    this.logger.log(
-      "Summarization worker initialized. Starting job Polling...",
-    );
-    this.pollJobs();
+  ) {
+    super();
   }
 
-  onModuleDestroy() {
-    if (this.pollingInterval) {
-      this.logger.log("Stopping summarization worker polling...");
-      clearTimeout(this.pollingInterval);
+  async process(job: Job<any, any, string>): Promise<any> {
+    if (job.name !== "summarize-candidate") {
+      this.logger.warn(`Unknown job name: ${job.name}`);
+      return;
     }
-  }
 
-  private async pollJobs() {
-    // Basic polling loop for the fake queue
-    // In a real app we'd use BullMQ or similar
-    const poll = async () => {
-      try {
-        const jobs = this.queueService.getQueuedJobs();
-        const summarizeJobs = jobs.filter(
-          (j) => j.name === "summarize-candidate",
-        );
-
-        for (const job of summarizeJobs) {
-          const { summaryId, candidateId, workspaceId } = job.payload as {
-            summaryId: string;
-            candidateId: string;
-            workspaceId: string;
-          };
-
-          // Attempt to mark as IN_PROGRESS to avoid double processing
-          const updateResult = await this.summaryRepo.update(
-            { id: summaryId, status: SummaryStatus.PENDING },
-            { status: SummaryStatus.IN_PROGRESS },
-          );
-
-          if (updateResult.affected && updateResult.affected > 0) {
-            await this.processJob(summaryId, candidateId, workspaceId);
-          }
-        }
-      } catch (error: any) {
-        this.logger.error(`Error in polling loop: ${error.message}`);
-      } finally {
-        this.pollingInterval = setTimeout(poll, 2000);
-      }
+    const { summaryId, candidateId, workspaceId } = job.data as {
+      summaryId: string;
+      candidateId: string;
+      workspaceId: string;
     };
 
-    poll();
-  }
-
-  private async processJob(
-    summaryId: string,
-    candidateId: string,
-    workspaceId: string,
-  ) {
     this.logger.log(
       `Processing summary ${summaryId} for candidate ${candidateId} in workspace ${workspaceId}`,
+    );
+
+    // Attempt to mark as IN_PROGRESS to avoid double processing (BullMQ handles retries,
+    // but we still want to update our status)
+    await this.summaryRepo.update(
+      { id: summaryId },
+      { status: SummaryStatus.IN_PROGRESS },
     );
 
     try {
@@ -128,6 +87,7 @@ export class SummarizationWorker implements OnModuleInit, OnModuleDestroy {
         status: SummaryStatus.FAILED,
         errorMessage: error.message,
       });
+      throw error; // Rethrow to let BullMQ handle retry if configured
     }
   }
 }

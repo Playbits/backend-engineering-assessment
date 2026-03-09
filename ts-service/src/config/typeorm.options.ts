@@ -9,6 +9,7 @@ import { InitialStarterEntities1710000000000 } from "../migrations/1710000000000
 import { CreateCandidateTables1772957733073 } from "../migrations/1772957733073-CreateCandidateTables";
 import { AddWorkspaceIdToPartB1772958985382 } from "../migrations/1772958985382-AddWorkspaceIdToPartB";
 import { AddInProgressToStatusEnum1772959000000 } from "../migrations/1772959000000-AddInProgressToStatusEnum";
+import { AddIndexesToCandidateTables1772959100000 } from "../migrations/1772959100000-AddIndexesToCandidateTables";
 
 export const defaultDatabaseUrl =
   "postgres://assessment_user:assessment_pass@localhost:5432/assessment_db";
@@ -29,6 +30,7 @@ export const getTypeOrmOptions = (
     CreateCandidateTables1772957733073,
     AddWorkspaceIdToPartB1772958985382,
     AddInProgressToStatusEnum1772959000000,
+    AddIndexesToCandidateTables1772959100000,
   ],
   migrationsTableName: "typeorm_migrations",
   synchronize: false,
