@@ -1,24 +1,30 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from "class-validator";
 
 export class UploadCandidateDocumentDto {
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(50)
-  documentType!: string;
-
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
   fileName!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  documentType?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(512)
-  storageKey!: string;
+  storageKey?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  rawText!: string;
+  rawText?: string;
 }
 
 export class GenerateSummaryDto {
